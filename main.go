@@ -3,6 +3,7 @@ package main
 import (
 	"key-value-db-golang/command"
 	"key-value-db-golang/datastore"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,5 +14,5 @@ func main() {
 	router := gin.Default()
 
 	router.POST("/", cmdHandler.HandleCommand)
-	router.Run(":8080")
+	router.Run(":" + os.Getenv("PORT"))
 }
