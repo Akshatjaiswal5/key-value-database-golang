@@ -8,8 +8,9 @@ import (
 
 // queue represents a simple queue.
 type queue struct {
-	mu     sync.Mutex
-	values []string
+	mu         sync.Mutex
+	values     []string
+	valuesChan chan string // added a channel to communicate the popped value to BQPop
 }
 
 // timedValue represents a value that is stored in the datastore
@@ -84,7 +85,7 @@ func (d *Datastore) QPush(key string, values ...string) error {
 
 	// If the queue does not exist, create a new queue and add it to the datastore.
 	if !ok {
-		q = &queue{}
+		q = &queue{valuesChan: make(chan string)} // added a valuesChan to the queue struct
 		d.queues[key] = q
 	}
 
@@ -95,6 +96,13 @@ func (d *Datastore) QPush(key string, values ...string) error {
 	// Append the given values to the end of the queue.
 	q.values = append(q.values, values...)
 
+	if len(q.values) == 1 { // if valuesChan is waiting for a value, send it
+		select {
+		case q.valuesChan <- q.values[0]:
+			q.values = q.values[1:]
+		default:
+		}
+	}
 	return nil
 }
 
@@ -123,19 +131,36 @@ func (d *Datastore) QPop(key string) (string, error) {
 	// Remove and return the last value in the queue.
 	value := q.values[len(q.values)-1]
 	q.values = q.values[:len(q.values)-1]
+
+	if len(q.values) > 0 && q.valuesChan != nil { // if valuesChan is waiting for a value, send it
+		select {
+		case q.valuesChan <- q.values[0]:
+			q.values = q.values[1:]
+		default:
+		}
+	}
+
 	return value, nil
 }
 
 func (d *Datastore) BQPop(key string, timeout time.Duration) (string, error) {
+	// Lock the mutex for the datastore to ensure thread-safety
 	d.mu.Lock()
+
+	// Check if a queue for the given key exists, otherwise create a new one
 	q, ok := d.queues[key]
 	if !ok {
 		q = &queue{}
 		d.queues[key] = q
 	}
+
+	// Release the lock on the datastore
 	d.mu.Unlock()
 
+	// Lock the mutex for the queue to ensure thread-safety
 	q.mu.Lock()
+
+	// If the queue is not empty, pop the last value and return it
 	if len(q.values) > 0 {
 		value := q.values[len(q.values)-1]
 		q.values = q.values[:len(q.values)-1]
@@ -143,10 +168,14 @@ func (d *Datastore) BQPop(key string, timeout time.Duration) (string, error) {
 		return value, nil
 	}
 
+	// Create a channel to signal timeout
 	timeoutChan := make(chan bool, 1)
+
+	// If timeout is greater than zero, create a timer and start it in a separate goroutine
 	if timeout > 0 {
 		timer := time.NewTimer(timeout)
 		defer timer.Stop()
+
 		go func() {
 			select {
 			case <-timer.C:
@@ -155,20 +184,16 @@ func (d *Datastore) BQPop(key string, timeout time.Duration) (string, error) {
 		}()
 	}
 
-	select {
-	case <-timeoutChan:
-		q.mu.Unlock()
-		return "", errors.New("queue is empty")
-	default:
-	}
-
-	valueChan := make(chan string, 1)
+	// Release the lock on the queue before blocking on a channel
 	q.mu.Unlock()
 
 	select {
-	case value := <-valueChan:
-		return value, nil
+	// If timeout is triggered, return an error
 	case <-timeoutChan:
 		return "", errors.New("queue is empty")
+
+	// Otherwise, wait for a value to be pushed onto the channel
+	case value := <-q.valuesChan:
+		return value, nil
 	}
 }

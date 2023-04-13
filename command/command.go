@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -167,5 +168,34 @@ func (h *commandHandler) QPop(parts []string, c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"value": value})
 }
 
+// BQPop removes and returns an item from the back of a blocking queue with the given key.
+// If the queue is empty, it will block until an item is available or the specified timeout has elapsed.
+// If the timeout is 0, it will block indefinitely.
 func (h *commandHandler) BQPop(parts []string, c *gin.Context) {
+	// Check if the command is valid
+	if len(parts) != 3 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid command"})
+		return
+	}
+
+	// Parse the timeout value from the command
+	timeout, err := strconv.Atoi(parts[2])
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid timeout"})
+		return
+	}
+
+	// Get the key from the command
+	key := parts[1]
+
+	// Remove and return an item from the blocking queue
+	value, err := h.db.BQPop(key, time.Duration(timeout)*time.Second)
+	if err != nil {
+		// Return an error response if the queue is empty or the key is not found in the datastore
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return the value associated with the key in the datastore
+	c.JSON(http.StatusOK, gin.H{"value": value})
 }
