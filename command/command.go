@@ -26,7 +26,7 @@ func NewCommandHandler(db *datastore.Datastore) *commandHandler {
 }
 
 // HandleCommand receives and parses incoming commands.
-func (h *commandHandler) HandleCommand(c *gin.Context) {
+func (h *commandHandler) Handler(c *gin.Context) {
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

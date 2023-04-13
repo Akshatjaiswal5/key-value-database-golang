@@ -13,6 +13,6 @@ func main() {
 	cmdHandler := command.NewCommandHandler(db)
 	router := gin.Default()
 
-	router.POST("/", cmdHandler.HandleCommand)
+	router.POST("/", cmdHandler.Handler)
 	router.Run(":" + os.Getenv("PORT"))
 }
