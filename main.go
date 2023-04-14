@@ -20,7 +20,7 @@ func main() {
 	router.Run(":" + os.Getenv("PORT"))
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	router.ServeHTTP(w, r)
 
 }
