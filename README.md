@@ -4,10 +4,9 @@
 ## Usage
 
  1. Install Golang on your system. 
- 2. Clone the repository and navigate to
- 3. the root directory. 
- 4. Run go build to compile the binary. 
- 5. Run  ./key-value-db-golang to start the server. 
+ 2. Clone the repository and navigate to the root directory. 
+ 3. Run go build to compile the binary. 
+ 4. Run  ./key-value-db-golang to start the server. 
                 The server is now listening on port 8080.
 
 ## Supported Commands
