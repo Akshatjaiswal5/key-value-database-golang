@@ -1,8 +1,9 @@
 package main
 
 import (
-	"key-value-db-golang/command"
 	"key-value-db-golang/datastore"
+	"key-value-db-golang/handler"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,7 +12,7 @@ func main() {
 	db := datastore.NewDatastore()
 
 	// Create a new command handler and pass in the datastore
-	cmdHandler := command.NewCommandHandler(db)
+	cmdHandler := handler.NewCommandHandler(db)
 
 	// Create a new Gin router
 	router := gin.Default()

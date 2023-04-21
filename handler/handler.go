@@ -1,4 +1,4 @@
-package command
+package handler
 
 import (
 	"key-value-db-golang/datastore"

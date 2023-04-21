@@ -8,7 +8,7 @@ import (
 
 // queue represents a simple queue.
 type queue struct {
-	mu         sync.Mutex
+	mu     sync.Mutex
 	Values chan string // added a channel to store values
 }
 
@@ -72,7 +72,7 @@ func (d *Datastore) Get(key string) (*timedValue, error) {
 	return value, nil
 }
 
-// QPush adds the given values to the end of the queue with the given key in the datastore.
+// QPush pushes given values to the channel with the given key in the datastore.
 // If the queue does not exist, it is created.
 // This function is thread-safe.
 func (d *Datastore) QPush(key string, values ...string) error {
@@ -84,7 +84,7 @@ func (d *Datastore) QPush(key string, values ...string) error {
 
 	// If the queue does not exist, create a new queue and add it to the datastore.
 	if !ok {
-		q = &queue{Values: make(chan string, 100)} 
+		q = &queue{Values: make(chan string, 100)}
 		d.queues[key] = q
 	}
 
@@ -93,8 +93,8 @@ func (d *Datastore) QPush(key string, values ...string) error {
 	defer q.mu.Unlock()
 
 	for _, v := range values {
-        q.Values <- v // Put each value in the channel
-    }
+		q.Values <- v // Put each value in the channel
+	}
 
 	return nil
 }
@@ -117,10 +117,10 @@ func (d *Datastore) QPop(key string) (string, error) {
 	defer q.mu.Unlock()
 
 	select {
-		case value := <-q.Values:
-			return value, nil
-		default:
-			return "", errors.New("queue is empty")
+	case value := <-q.Values:
+		return value, nil
+	default:
+		return "", errors.New("queue is empty")
 	}
 }
 
@@ -132,13 +132,13 @@ func (d *Datastore) BQPop(key string, timeout time.Duration) (string, error) {
 	// Get the queue with the given key.
 	q, ok := d.queues[key]
 	if !ok {
-		q = &queue{Values: make(chan string, 100)} 	// Check if a queue for the given key exists, otherwise create a new one
+		q = &queue{Values: make(chan string, 100)} // Check if a queue for the given key exists, otherwise create a new one
 		d.queues[key] = q
 	}
 
 	// Create a channel to signal timeout
 	timeoutChan := make(chan bool, 1)
-	
+
 	//create a timer and start it in a separate goroutine
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
@@ -154,12 +154,12 @@ func (d *Datastore) BQPop(key string, timeout time.Duration) (string, error) {
 	d.mu.Unlock()
 
 	select {
-		// If timeout is triggered, return an error
-		case <-timeoutChan:
-			return "", errors.New("queue is empty")
+	// If timeout is triggered, return an error
+	case <-timeoutChan:
+		return "", errors.New("queue is empty")
 
-		// Otherwise, wait for a value to be pushed onto the channel
-		case value := <-q.Values:
-			return value, nil	
+	// Otherwise, wait for a value to be pushed onto the channel
+	case value := <-q.Values:
+		return value, nil
 	}
 }
