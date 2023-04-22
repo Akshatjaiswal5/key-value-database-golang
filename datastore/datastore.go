@@ -36,7 +36,7 @@ func NewDatastore() *Datastore {
 }
 
 // Set sets the value for the given key in the datastore.
-func (d *Datastore) Set(key string, value string, expirySeconds int) error {
+func (d *Datastore) Set(key string, value string, expirySeconds time.Duration) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -45,7 +45,7 @@ func (d *Datastore) Set(key string, value string, expirySeconds int) error {
 	}
 
 	if expirySeconds != 0 {
-		newTimedValue.expiryTime = time.Now().Add(time.Duration(expirySeconds) * time.Second)
+		newTimedValue.expiryTime = time.Now().Add(expirySeconds * time.Second)
 	} else {
 		newTimedValue.expiryTime = time.Date(2099, 12, 31, 23, 59, 59, 999999999, time.UTC)
 	}
@@ -55,21 +55,21 @@ func (d *Datastore) Set(key string, value string, expirySeconds int) error {
 }
 
 // Get retrieves the value for the given key from the datastore.
-func (d *Datastore) Get(key string) (*timedValue, error) {
+func (d *Datastore) Get(key string) (string, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
 	value, ok := d.values[key]
 	if !ok {
-		return nil, errors.New("key not found")
+		return "", errors.New("key not found")
 	}
 
 	if value.expiryTime.Before(time.Now()) {
 		delete(d.values, key)
-		return nil, errors.New("key not found")
+		return "", errors.New("key not found")
 	}
 
-	return value, nil
+	return value.Value, nil
 }
 
 // QPush pushes given values to the channel with the given key in the datastore.
@@ -140,7 +140,7 @@ func (d *Datastore) BQPop(key string, timeout time.Duration) (string, error) {
 	timeoutChan := make(chan bool, 1)
 
 	//create a timer and start it in a separate goroutine
-	timer := time.NewTimer(timeout)
+	timer := time.NewTimer(timeout * time.Second)
 	defer timer.Stop()
 
 	go func() {
