@@ -8,7 +8,6 @@ import (
 func Test_Set(t *testing.T) {
 	// Create a new instance of Datastore.
 	datastore := NewDatastore()
-
 	// Test case 1: set a value with expiry.
 	key1 := "testkey1"
 	value1 := "testvalue1"
