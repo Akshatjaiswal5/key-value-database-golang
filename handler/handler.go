@@ -37,7 +37,7 @@ func NewCommandHandler(db *datastore.Datastore) *commandHandler {
 }
 
 // parseRequest parses and validate the incoming request
-func (h *commandHandler) parseRequest(c *gin.Context) (*parsedRequest, error) {
+func ParseRequest(c *gin.Context) (*parsedRequest, error) {
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, err
@@ -71,6 +71,10 @@ func (h *commandHandler) parseRequest(c *gin.Context) (*parsedRequest, error) {
 			} else if parts[i] == "NX" || parts[i] == "XX" {
 				condition = parts[i]
 			}
+		}
+
+		if expirySeconds < 0 {
+			return nil, errors.New("Invalid expirySeconds")
 		}
 		return &parsedRequest{
 			command:       "SET",
@@ -135,7 +139,7 @@ func (h *commandHandler) parseRequest(c *gin.Context) (*parsedRequest, error) {
 
 // HandleCommand receives and responds to incoming commands.
 func (h *commandHandler) HandleCommand(c *gin.Context) {
-	req, err := h.parseRequest(c)
+	req, err := ParseRequest(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
