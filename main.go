@@ -3,12 +3,13 @@ package main
 import (
 	"key-value-db-golang/datastore"
 	"key-value-db-golang/handler"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	// Create a new instance of the key-value datastore
+
+func Handler(w http.ResponseWriter , r *http.Request){
 	db := datastore.NewDatastore()
 
 	// Create a new command handler and pass in the datastore
@@ -21,5 +22,5 @@ func main() {
 	router.POST("/", cmdHandler.HandleCommand)
 
 	// Start the web server and listen for incoming HTTP requests on port 8080
-	router.Run(":8080")
+	router.ServeHTTP(w,r)
 }
