@@ -22,5 +22,6 @@ func Handler(w http.ResponseWriter , r *http.Request){
 	router.POST("/", cmdHandler.HandleCommand)
 
 	// Start the web server and listen for incoming HTTP requests on port 8080
+	router.Run(":3000")
 	router.ServeHTTP(w,r)
 }
