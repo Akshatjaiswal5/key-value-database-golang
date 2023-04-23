@@ -7,21 +7,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-
-func Handler(w http.ResponseWriter , r *http.Request){
+var router=gin.Default()
+func main() {
 	db := datastore.NewDatastore()
 
 	// Create a new command handler and pass in the datastore
 	cmdHandler := handler.NewCommandHandler(db)
 
 	// Create a new Gin router
-	router := gin.Default()
+	router = gin.Default()
 
 	// Map the command handler to the root path for incoming POST requests
 	router.POST("/", cmdHandler.HandleCommand)
+}
+
+func Handler(w http.ResponseWriter , r *http.Request){
+	
 
 	// Start the web server and listen for incoming HTTP requests on port 8080
-	router.Run(":3000")
 	router.ServeHTTP(w,r)
 }
