@@ -1,4 +1,6 @@
-# key-value-database-golang
+# Greedy Game Assignment
+### Key Value Database in Golang
+#### Deployed endpoint: https://golang-kv-db.onrender.com
 #### This is a simple key-value database implemented in Golang. It supports basic operations such as SET, GET, QPUSH, QPOP and BQPOP. The database uses the Gin web framework to handle incoming requests.
 
 ## [Changes from previous submission]
